@@ -1,9 +1,21 @@
 import React from 'react';
-import { Settings, LogOut, User } from 'lucide-react';
+import { Settings, LogOut, User, BrainCircuit } from 'lucide-react';
 import { useAatman } from './AatmanContext';
 
-export function AatmanTopNav({ user, onLogout }: { user?: any, onLogout?: () => void }) {
+export type ChatEngine = 'llm' | 'brain';
+
+interface AatmanTopNavProps {
+  user?: any;
+  onLogout?: () => void;
+  engine?: ChatEngine;
+  onEngineChange?: (engine: ChatEngine) => void;
+  brainOnline?: boolean | null;
+}
+
+export function AatmanTopNav({ user, onLogout, engine = 'llm', onEngineChange, brainOnline = null }: AatmanTopNavProps) {
   const { telemetry } = useAatman();
+  const brainLabel = brainOnline === null ? 'CHECKING' : brainOnline ? 'ONLINE' : 'OFFLINE';
+  const brainDot = brainOnline ? 'bg-[#00F5D4] shadow-[0_0_8px_rgba(0,245,212,0.6)]' : 'bg-muted-foreground/40';
 
   return (
     <header className="h-16 border-b border-[#00F5D4]/20 alien-glass flex items-center justify-between px-6 z-10 w-full">
@@ -19,6 +31,30 @@ export function AatmanTopNav({ user, onLogout }: { user?: any, onLogout?: () => 
       </div>
 
       <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 px-3 py-1 rounded-full bg-primary/5 border border-primary/20 font-mono text-[10px] tracking-widest">
+          <div className="flex items-center space-x-1.5" title={`AATMAN Brain: ${brainLabel}`}>
+            <BrainCircuit className="w-3.5 h-3.5 text-primary/70" />
+            <span className={`w-1.5 h-1.5 rounded-full ${brainDot}`} />
+            <span className="hidden lg:inline text-muted-foreground">BRAIN_{brainLabel}</span>
+          </div>
+          {onEngineChange && (
+            <div className="flex items-center rounded-full border border-primary/20 overflow-hidden" role="group" aria-label="Chat engine">
+              {(['llm', 'brain'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onEngineChange(option)}
+                  disabled={option === 'brain' && !brainOnline}
+                  aria-pressed={engine === option}
+                  className={`px-2 py-0.5 uppercase transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${engine === option ? 'bg-primary text-black' : 'text-primary/70 hover:text-primary'}`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/20">
           <User className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-white">{user?.username || 'GUEST_USER'}</span>

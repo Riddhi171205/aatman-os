@@ -1,90 +1,60 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
 import os
-import sys
-from openai import OpenAI
+from dataclasses import dataclass, field
+from pathlib import Path
+
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, default))
+    except ValueError:
+        return default
+
+
+def _default_openai_base_url() -> str | None:
+    # NVIDIA's API is OpenAI-compatible, so an NVIDIA key alone is enough to use it.
+    if os.getenv("OPENAI_BASE_URL"):
+        return os.getenv("OPENAI_BASE_URL")
+    return NVIDIA_BASE_URL if os.getenv("NVIDIA_API_KEY") else None
 
 
 @dataclass(frozen=True)
-class LLMConfig:
-    """Configuration for LLM client (NVIDIA / OpenAI compatible APIs)."""
+class BrainConfig:
+    """Runtime configuration for AATMAN BRAIN, read from the environment.
 
-    base_url: str = os.getenv("LLM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-    api_key: str | None = os.getenv("NVIDIA_API_KEY")
-    model: str = os.getenv("LLM_MODEL", "z-ai/glm-5.1")
+    LLM providers (AATMAN_LLM_PROVIDER):
+    - local (default): deterministic fallbacks, no network
+    - ollama: OLLAMA_URL + AATMAN_OLLAMA_MODEL
+    - openai: OPENAI_BASE_URL + OPENAI_API_KEY + AATMAN_OPENAI_MODEL
+      (NVIDIA_API_KEY works too and defaults the base URL to NVIDIA's endpoint)
+    """
 
-    temperature: float = float(os.getenv("LLM_TEMPERATURE", "1"))
-    top_p: float = float(os.getenv("LLM_TOP_P", "1"))
-    max_tokens: int = int(os.getenv("LLM_MAX_TOKENS", "16384"))
+    data_dir: Path = field(default_factory=lambda: Path(os.getenv("AATMAN_DATA_DIR", "data")))
+    max_context_items: int = field(default_factory=lambda: _env_int("AATMAN_MAX_CONTEXT_ITEMS", 5))
 
-    enable_thinking: bool = os.getenv("LLM_ENABLE_THINKING", "true").lower() == "true"
-    timeout_seconds: int = int(os.getenv("LLM_TIMEOUT", "30"))
+    llm_provider: str = field(default_factory=lambda: os.getenv("AATMAN_LLM_PROVIDER", "local"))
+    request_timeout_seconds: int = field(default_factory=lambda: _env_int("AATMAN_LLM_TIMEOUT", 30))
 
+    ollama_url: str = field(default_factory=lambda: os.getenv("OLLAMA_URL", "http://localhost:11434"))
+    ollama_model: str = field(default_factory=lambda: os.getenv("AATMAN_OLLAMA_MODEL", "llama3"))
 
-class LLMClient:
-    """Streaming LLM client with reasoning support."""
+    openai_base_url: str | None = field(default_factory=_default_openai_base_url)
+    openai_api_key: str | None = field(
+        default_factory=lambda: os.getenv("OPENAI_API_KEY") or os.getenv("NVIDIA_API_KEY")
+    )
+    openai_model: str = field(default_factory=lambda: os.getenv("AATMAN_OPENAI_MODEL", "z-ai/glm-5.1"))
 
-    def __init__(self, config: LLMConfig):
-        self.config = config
+    @property
+    def memory_dir(self) -> Path:
+        return self.data_dir / "brain_memory"
 
-        self.client = OpenAI(
-            base_url=self.config.base_url,
-            api_key=self.config.api_key,
-        )
-
-        # Terminal color handling
-        self._use_color = sys.stdout.isatty() and os.getenv("NO_COLOR") is None
-        self._reasoning_color = "\033[90m" if self._use_color else ""
-        self._reset_color = "\033[0m" if self._use_color else ""
-
-    def stream_chat(self, message: str):
-        """Stream chat completion with reasoning output."""
-
-        completion = self.client.chat.completions.create(
-            model=self.config.model,
-            messages=[{"role": "user", "content": message}],
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            max_tokens=self.config.max_tokens,
-            stream=True,
-            extra_body={
-                "chat_template_kwargs": {
-                    "enable_thinking": self.config.enable_thinking,
-                    "clear_thinking": False,
-                }
-            },
-        )
-
-        for chunk in completion:
-            if not getattr(chunk, "choices", None):
-                continue
-
-            choice = chunk.choices[0]
-            delta = getattr(choice, "delta", None)
-
-            if not delta:
-                continue
-
-            # Reasoning output (gray color)
-            reasoning = getattr(delta, "reasoning_content", None)
-            if reasoning:
-                print(f"{self._reasoning_color}{reasoning}{self._reset_color}", end="")
-
-            # Final output
-            if getattr(delta, "content", None):
-                print(delta.content, end="")
+    @property
+    def knowledge_dir(self) -> Path:
+        return self.data_dir / "knowledge"
 
 
-def get_llm_client() -> LLMClient:
-    """Factory to initialize client safely."""
-    config = LLMConfig()
-
-    if not config.api_key:
-        raise ValueError("Missing NVIDIA_API_KEY environment variable")
-
-    return LLMClient(config)
-
-
-# ---- Usage ----
-if __name__ == "__main__":
-    client = get_llm_client()
-    client.stream_chat("Hello, how are you?")
+def get_config() -> BrainConfig:
+    return BrainConfig()

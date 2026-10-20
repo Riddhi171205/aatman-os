@@ -52,3 +52,18 @@ docker-compose up -d --build
 > `ollama pull llama3`
 > `ollama pull nomic-embed-text`
 
+
+## AATMAN BRAIN (Python Core Intelligence)
+
+The Python brain in `aatman_brain/` (reasoning, memory, knowledge, world model, explainability, agent society) is bridged into the Node backend via `backend/services/brainService.ts`.
+
+```bash
+pip install -r requirements-brain.txt
+npm run brain        # FastAPI on http://localhost:8001 (docs at /docs)
+npm run dev          # in another terminal
+```
+
+- Toggle **LLM / BRAIN** in the dashboard top bar to route chat through the brain. If the brain is unreachable, chat falls back to the NVIDIA → Ollama → Gemini chain automatically.
+- `POST /api/chat` accepts `engine: "llm" | "brain"`; brain replies include `observability.brain` (intent, plan, simulation, explanation).
+- Brain endpoints (JWT required except status): `GET /api/brain/status`, `POST /api/brain/think`, `POST /api/brain/agents/run`, `POST /api/brain/agents/feedback`, `POST /api/brain/memory`, `GET /api/brain/retrieve`, `POST /api/brain/knowledge/text`. Brain memory is namespaced per user.
+- Config: `BRAIN_URL` (Node side), `AATMAN_LLM_PROVIDER=local|ollama|openai`, `AATMAN_DATA_DIR` (default `data/`). See `aatman_brain/config.py`.

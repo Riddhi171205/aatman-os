@@ -4,7 +4,8 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { AatmanProvider, useAatman } from './AatmanContext';
 import { AatmanSidebar } from './AatmanSidebar';
-import { AatmanTopNav } from './AatmanTopNav';
+import { AatmanTopNav, ChatEngine } from './AatmanTopNav';
+import { useBrainStatus } from './useBrainStatus';
 import { AatmanBottomBar } from './AatmanBottomBar';
 import { AatmanRightPanel } from './AatmanRightPanel';
 import { AatmanAICore } from './AatmanAICore';
@@ -25,6 +26,20 @@ function DashboardLayout({ user, onLogout }: AatmanDashboardProps) {
   const [command, setCommand] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [engine, setEngine] = useState<ChatEngine>(() => {
+    try {
+      return localStorage.getItem('aatman_engine') === 'brain' ? 'brain' : 'llm';
+    } catch {
+      return 'llm';
+    }
+  });
+  const brainOnline = useBrainStatus();
+
+  const changeEngine = (next: ChatEngine) => {
+    setEngine(next);
+    try { localStorage.setItem('aatman_engine', next); } catch {}
+    toast.info(next === 'brain' ? 'Routing through AATMAN Brain' : 'Routing through LLM core');
+  };
 
   // Track if the system has been permanently woken up (Continuous Listening Mode)
   const systemAwakeRef = React.useRef<boolean>(false);
@@ -243,13 +258,23 @@ function DashboardLayout({ user, onLogout }: AatmanDashboardProps) {
 
       setPipelineStep('planner', 'complete');
       setPipelineStep('response', 'active');
-      addLog('Agent', 'Querying LLM Core');
+      const useBrain = engine === 'brain' && brainOnline !== false;
+      addLog('Agent', useBrain ? 'Querying AATMAN Brain' : 'Querying LLM Core');
 
       const res = await api.sendMessage({
         userId: user?.id || 'guest',
         sessionId: sessionId,
-        message: input
+        message: input,
+        engine: useBrain ? 'brain' : 'llm'
       });
+
+      const brain = res.observability?.brain;
+      if (brain) {
+        addLog('Brain', `Intent: ${brain.intent.label} (${Math.round(brain.intent.confidence * 100)}%)`);
+        addLog('Brain', `Plan: ${brain.plan.length} step(s), confidence ${Math.round(brain.explanation.confidence * 100)}%`);
+      } else if (res.observability?.brainFallback) {
+        addLog('Brain', 'Brain unreachable, fell back to LLM core');
+      }
 
       if (res.observability) {
         updateTelemetry({
@@ -330,7 +355,13 @@ function DashboardLayout({ user, onLogout }: AatmanDashboardProps) {
       <AatmanSidebar />
 
       <div className="flex flex-col flex-1 relative z-10 h-full overflow-hidden">
-        <AatmanTopNav user={user} onLogout={onLogout} />
+        <AatmanTopNav
+          user={user}
+          onLogout={onLogout}
+          engine={engine}
+          onEngineChange={changeEngine}
+          brainOnline={brainOnline}
+        />
 
         <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Main Center Content */}

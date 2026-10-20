@@ -9,6 +9,7 @@ services:
       - DATABASE_URL=postgres://root:aatmanos@postgres:5432/aatman
       - QDRANT_URL=http://qdrant:6333
       - OLLAMA_URL=http://host.docker.internal:11434
+      - BRAIN_URL=http://host.docker.internal:8001
       - JWT_SECRET=aatman_production_secret
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:

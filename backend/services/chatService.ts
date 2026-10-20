@@ -3,6 +3,7 @@ import { dbService } from '../db/pg';
 import { MemoryService } from './memoryService';
 import { ContextBuilder } from './contextBuilder';
 import { SummarizationService } from './summarizationService';
+import { BrainService, BrainDecision } from './brainService';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const apiKey = process.env.GEMINI_API_KEY;
@@ -10,8 +11,11 @@ const isRealApiKey = apiKey && apiKey.length > 0 && apiKey !== 'MY_GEMINI_API_KE
 const ai = isRealApiKey ? new GoogleGenAI({ apiKey }) : null;
 const FAST_REPLY_TIMEOUT_MS = 1800;
 
+export type ChatEngine = 'llm' | 'brain';
+
 interface ChatOptions {
     fastMode?: boolean;
+    engine?: ChatEngine;
 }
 
 export class ChatService {
@@ -56,12 +60,25 @@ export class ChatService {
         let aiResponseText = "";
         let activeModelUsed = "unknown";
         
-        try {
-            const completionResult = await this.generateCompletionWithMetadata(fullPrompt);
-            aiResponseText = completionResult.text;
-            activeModelUsed = completionResult.model;
-        } catch (e: any) {
-            aiResponseText = "Error generating response.";
+        let brainDecision: BrainDecision | null = null;
+
+        // Brain engine: route through the Python AATMAN BRAIN, falling back to the LLM chain if it's offline.
+        if (options.engine === 'brain') {
+            brainDecision = await BrainService.think(prompt, `${userId}:${sessionId}`);
+            if (brainDecision) {
+                aiResponseText = brainDecision.response;
+                activeModelUsed = 'aatman-brain';
+            }
+        }
+
+        if (!brainDecision) {
+            try {
+                const completionResult = await this.generateCompletionWithMetadata(fullPrompt);
+                aiResponseText = completionResult.text;
+                activeModelUsed = completionResult.model;
+            } catch (e: any) {
+                aiResponseText = "Error generating response.";
+            }
         }
         
         const latencyMs = Date.now() - t0;
@@ -79,7 +96,17 @@ export class ChatService {
                     userQuery: prompt
                 },
                 latencyMs,
-                activeModel: activeModelUsed
+                activeModel: activeModelUsed,
+                engine: brainDecision ? 'brain' : 'llm',
+                brainFallback: options.engine === 'brain' && !brainDecision,
+                brain: brainDecision ? {
+                    intent: brainDecision.intent,
+                    plan: brainDecision.plan,
+                    simulation: brainDecision.simulation,
+                    explanation: brainDecision.explanation,
+                    memoryContext: brainDecision.memory_context,
+                    knowledgeContext: brainDecision.knowledge_context
+                } : undefined
             }
         };
     }

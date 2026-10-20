@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
+    "brain": "python3 -m uvicorn aatman_brain.api.main:app --reload --port 8001",
     "start": "node dist/server.cjs",
     "build:server": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "build": "vite build && npm run build:server",

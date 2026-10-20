@@ -12,7 +12,7 @@ export interface PipelineStep {
 
 export interface SystemLog {
     id: string;
-    scope: 'System' | 'Voice' | 'Memory' | 'Agent' | 'Execution' | 'Response';
+    scope: 'System' | 'Voice' | 'Memory' | 'Agent' | 'Execution' | 'Response' | 'Brain';
     message: string;
     createdAt: number;
 }

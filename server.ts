@@ -13,6 +13,7 @@ import voiceRouter from './backend/routes/voice';
 import executionRouter from './backend/routes/execution';
 import airControlRouter from './backend/routes/aircontrol';
 import settingsRouter from './backend/routes/settings';
+import brainRouter from './backend/routes/brain';
 
 // Initialize App
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/voice', voiceRouter);
 app.use('/api/execute', executionRouter);
 app.use('/api/aircontrol', airControlRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/brain', brainRouter);
 
 // --- Uploads ---
 import multer from 'multer';

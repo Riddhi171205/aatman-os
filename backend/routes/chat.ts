@@ -7,13 +7,17 @@ const router = Router();
 // Endpoint: POST /api/chat
 router.post('/', async (req, res) => {
     try {
-        const { userId, sessionId, message } = req.body;
+        const { userId, sessionId, message, engine } = req.body;
         
         if (!userId || !sessionId || !message) {
             return res.status(400).json({ error: 'userId, sessionId, and message are required' });
         }
 
-        const result = await ChatService.handleUserChat(userId, sessionId, message, { fastMode: true });
+        if (engine !== undefined && engine !== 'llm' && engine !== 'brain') {
+            return res.status(400).json({ error: "engine must be 'llm' or 'brain'" });
+        }
+
+        const result = await ChatService.handleUserChat(userId, sessionId, message, { fastMode: true, engine });
         
         res.json({
             message: result.response,
