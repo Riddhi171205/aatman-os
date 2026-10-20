@@ -1,0 +1,6 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+requests>=2.32.0
+
+# Optional: enables PDF ingestion in /knowledge/file.
+pypdf>=5.0.0

@@ -1,0 +1,25 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Added for GitHub upload
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+dist/
+build/
+.next/
+coverage/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+proposal-app/

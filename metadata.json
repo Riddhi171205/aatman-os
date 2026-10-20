@@ -1,0 +1,8 @@
+{
+  "name": "AATMAN OS",
+  "description": "An experimental AI-native operating system with memory, tool execution, and a futuristic UI.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": []
+}

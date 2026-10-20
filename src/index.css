@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Force JetBrains Mono as the primary sans font since the theme uses mono everywhere */
+  --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+  :root, .dark {
+    --background: #0B0F14;
+    --foreground: #E2E8F0;
+    --card: #111827;
+    --card-foreground: #00F5D4;
+    --popover: #0B0F14;
+    --popover-foreground: #00F5D4;
+    
+    --primary: #00F5D4;
+    --primary-foreground: #0B0F14;
+    
+    --secondary: #7B61FF;
+    --secondary-foreground: #FFFFFF;
+    
+    --muted: rgba(123, 97, 255, 0.15);
+    --muted-foreground: rgba(123, 97, 255, 0.8);
+    
+    --accent: rgba(0, 245, 212, 0.1);
+    --accent-foreground: #00F5D4;
+    
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    
+    --border: rgba(0, 245, 212, 0.15);
+    --input: rgba(0, 245, 212, 0.15);
+    --ring: #00F5D4;
+    
+    --radius: 0.75rem;
+    
+    --sidebar-background: rgba(11, 15, 20, 0.95);
+    --sidebar-foreground: #00F5D4;
+    --sidebar-primary: #00F5D4;
+    --sidebar-primary-foreground: #0B0F14;
+    --sidebar-accent: rgba(0, 245, 212, 0.1);
+    --sidebar-accent-foreground: #00F5D4;
+    --sidebar-border: rgba(0, 245, 212, 0.2);
+    --sidebar-ring: #00F5D4;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans selection:bg-[#7B61FF]/30 overflow-hidden;
+    background:
+      radial-gradient(circle at 50% -20%, rgba(123, 97, 255, 0.15), transparent 40%),
+      radial-gradient(circle at 100% 50%, rgba(0, 245, 212, 0.08), transparent 50%),
+      #0B0F14;
+  }
+  
+  /* Technical Alien Grid */
+  .technical-grid {
+    background-size: 40px 40px;
+    background-image: 
+      linear-gradient(to right, rgba(0, 245, 212, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 245, 212, 0.03) 1px, transparent 1px);
+  }
+
+  /* Utility classes for the alien UI */
+  .alien-glass {
+    @apply bg-[#0B0F14]/60 backdrop-blur-md border border-[#00F5D4]/20 shadow-[0_0_15px_rgba(0,245,212,0.05)];
+  }
+  
+  .alien-glass-purple {
+    @apply bg-[#0B0F14]/60 backdrop-blur-md border border-[#7B61FF]/20 shadow-[0_0_15px_rgba(123,97,255,0.05)];
+  }
+
+  .glow-text-primary {
+    text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
+  }
+  
+  .glow-text-secondary {
+    text-shadow: 0 0 10px rgba(123, 97, 255, 0.5);
+  }
+}
